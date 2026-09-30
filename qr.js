@@ -71,7 +71,7 @@ router.get('/', async (req, res) => {
                     const randomText = generateRandomText();
                     try {
                         const base64Session = Buffer.from(data.toString()).toString('base64');
-                        let md = "ANJU-XPRO~" + base64Session;
+                        let md = "DILA-MD=" + base64Session;
                         let code = await sock.sendMessage(sock.user.id, { text: md });
                         
                         let cap = `
