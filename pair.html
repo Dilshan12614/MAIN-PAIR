@@ -1,198 +1,516 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>QUEEN DINU MD PAIR CODE</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
+  <title>DILA-MD PAIR CODE</title>
+
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+  >
+
   <style>
+    * {
+      box-sizing: border-box;
+    }
+
     body {
+      margin: 0;
+      min-height: 100vh;
+
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 100vh;
-      margin: 0;
-      background-image: url("https://wallpapercave.com/w/wp13381180.jpg"); /* Set the background image */
+
+      background-image:
+        linear-gradient(
+          rgba(0, 0, 0, 0.45),
+          rgba(0, 0, 0, 0.65)
+        ),
+        url("https://wallpapercave.com/w/wp13381180.jpg");
+
       background-repeat: no-repeat;
       background-position: center;
       background-size: cover;
+
       font-family: Arial, sans-serif;
     }
 
     .container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+      width: 100%;
+      max-width: 430px;
+      padding: 20px;
     }
 
     .box {
-      width: 300px;
-      height: 330px;
-      padding: 20px;
-      position: relative;
+      width: 100%;
+      padding: 28px 22px;
+
       text-align: center;
-      background-color: rgba(255,255,255,0.5);
-      border-radius: 10px;
-      transform: perspective(1000px) rotateY(0deg);
-      box-shadow: none; /* Removed box shadow */
-      position: relative;
+
+      background: rgba(255, 255, 255, 0.88);
+
+      border-radius: 20px;
+
+      box-shadow:
+        0 10px 35px rgba(0, 0, 0, 0.35);
+
+      backdrop-filter: blur(10px);
     }
 
-    #text {
-      color: #000; /* Set the text color to black (#000) */
+    .logo-icon {
+      width: 70px;
+      height: 70px;
+
+      margin: 0 auto 12px;
+
+      display: flex;
+      justify-content: center;
+      align-items: center;
+
+      border-radius: 50%;
+
+      background: linear-gradient(
+        135deg,
+        #8a2be2,
+        #800080
+      );
+
+      color: white;
+
+      font-size: 30px;
+
+      box-shadow:
+        0 5px 20px rgba(128, 0, 128, 0.4);
     }
 
-    .input-container input {
-      color: #000; /* Set the text color to black (#000) */
+    .title {
+      margin: 8px 0;
+
+      color: #111;
+
+      font-size: 23px;
+      font-weight: 900;
+
+      letter-spacing: 1px;
     }
 
-    .centered-text {
-      color: #000; /* Set the text color to black (#000) */
+    .subtitle {
+      margin-bottom: 22px;
+
+      color: #555;
+
+      font-size: 13px;
+      font-weight: bold;
+    }
+
+    .instruction {
+      margin-bottom: 10px;
+
+      color: #222;
+
+      font-size: 13px;
+      font-weight: bold;
     }
 
     .input-container {
-      display: flex;
-      background: white;
-      border-radius: 1rem;
-      background: linear-gradient(45deg, #c5c5c5 0%, #ffffff 100%);
-      padding: 0.3rem;
-      gap: 0.3rem;
-      max-width: 300px; /* Set your desired maximum width */
       width: 100%;
+
+      display: flex;
+
+      padding: 5px;
+
+      gap: 5px;
+
+      background: white;
+
+      border-radius: 14px;
+
+      box-shadow:
+        0 3px 12px rgba(0, 0, 0, 0.15);
     }
 
     .input-container input {
-      border-radius: 0.8rem 0 0 0.8rem;
-      background: #e8e8e8;
-      width: 89%;
-      flex-basis: 75%;
-      padding: 1rem;
+      min-width: 0;
+
+      flex: 1;
+
+      padding: 14px;
+
       border: none;
-      border-left: 2px solid #ff9d9d;
-      color: #5e5e5e;
-      transition: all 0.2s ease-in-out;
+      border-left: 3px solid #8a2be2;
+
+      outline: none;
+
+      background: #f1f1f1;
+
+      color: #111;
+
+      font-size: 15px;
+
+      border-radius: 10px 0 0 10px;
     }
 
     .input-container input:focus {
-      border-left: 2px solid #ff9d9d;
-      outline: none;
+      border-left-color: #800080;
     }
 
     .input-container button {
-      flex-basis: 25%;
-      padding: 1rem;
-      background: linear-gradient(135deg, #8a2be2 0%, #800080 100%); /* Purple background */
-      font-weight: 900;
-      letter-spacing: 0.3rem;
-      text-transform: uppercase;
-      color: white;
+      width: 95px;
+
       border: none;
-      width: 100%;
-      border-radius: 0 1rem 1rem 0;
-      transition: all 0.2s ease-in-out;
+
+      border-radius: 0 10px 10px 0;
+
+      background: linear-gradient(
+        135deg,
+        #8a2be2,
+        #800080
+      );
+
+      color: white;
+
+      font-size: 13px;
+      font-weight: 900;
+
+      letter-spacing: 1px;
+
+      cursor: pointer;
+
+      transition: 0.2s;
     }
 
     .input-container button:hover {
-      background: linear-gradient(135deg, #A8E4A0 0%, #32CD32 100%);
-      color: red; /* Change text color on hover to red */
+      transform: scale(1.02);
+
+      background: linear-gradient(
+        135deg,
+        #32cd32,
+        #228b22
+      );
+    }
+
+    .input-container button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    #pair {
+      margin-top: 20px;
+
+      min-height: 25px;
+    }
+
+    #waiting-message {
+      display: none;
+
+      margin-top: 15px;
+
+      color: #555;
+
+      font-weight: bold;
+    }
+
+    .code-box {
+      display: inline-block;
+
+      margin-top: 8px;
+
+      padding: 12px 18px;
+
+      border-radius: 12px;
+
+      background: #111;
+
+      color: white;
+
+      font-size: 19px;
+
+      font-weight: 900;
+
+      letter-spacing: 2px;
+
+      cursor: pointer;
+
+      box-shadow:
+        0 5px 15px rgba(0, 0, 0, 0.25);
+    }
+
+    .code-box span {
+      color: #00ff88;
+    }
+
+    .success {
+      color: #008000;
+
+      font-weight: bold;
+
+      font-size: 13px;
+    }
+
+    .error {
+      color: #d00000;
+
+      font-weight: bold;
+
+      font-size: 13px;
+    }
+
+    .footer-text {
+      margin-top: 22px;
+
+      color: #666;
+
+      font-size: 11px;
+
+      font-weight: bold;
     }
 
     @media (max-width: 500px) {
+      .container {
+        padding: 15px;
+      }
+
+      .box {
+        padding: 25px 17px;
+      }
+
       .input-container {
         flex-direction: column;
       }
 
       .input-container input {
-        border-radius: 0.8rem;
+        width: 100%;
+
+        border-radius: 10px;
+
+        border-left: none;
+
+        border-bottom: 3px solid #8a2be2;
       }
 
       .input-container button {
-        padding: 1rem;
-        border-radius: 0.8rem;
-      }
-    }
+        width: 100%;
 
-    .centered-text {
-      text-align: center;
+        min-height: 48px;
+
+        border-radius: 10px;
+      }
     }
   </style>
 </head>
+
 <body>
+
   <div class="container">
-    <div class="main">
-      <div class="box" id="box">
-        <div id="text">
-          <i class="fa fa-user"></i>
-          <p>
-            <h3 class="centered-text">Link with phone number</h3>
-            <br>
-            <h6>⚙Enter your number with country code.⚙</h6>
-            <div class="input-container">
-              <input placeholder="+94789123880" type="number" id="number" placeholder="⚙enter your phone number with country code⚙" name="">
-              <button id="submit">enter</button>
-            </div>
-           
-            <a id="waiting-message" class="centered-text" style="display: none;">in process...</a>
-            <br>
-            <br>
-            <main id="pair"></main>
-          </p>
-        </div>
+
+    <div class="box">
+
+      <div class="logo-icon">
+        <i class="fas fa-link"></i>
       </div>
+
+      <div class="title">
+        DILA-MD
+      </div>
+
+      <div class="subtitle">
+        WHATSAPP PAIRING SYSTEM
+      </div>
+
+      <div class="instruction">
+        ⚙️ Enter your WhatsApp number with country code
+      </div>
+
+      <div class="input-container">
+
+        <input
+          type="tel"
+          id="number"
+          placeholder="+94789123880"
+          autocomplete="tel"
+        >
+
+        <button id="submit">
+          ENTER
+        </button>
+
+      </div>
+
+      <div id="waiting-message">
+        🔎 Generating pairing code...
+      </div>
+
+      <main id="pair"></main>
+
+      <div class="footer-text">
+        DILA-MD • SESSION GENERATOR
+      </div>
+
     </div>
+
   </div>
+
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.0.0-alpha.1/axios.min.js"></script>
+
   <script>
-    let a = document.getElementById("pair");
-    let b = document.getElementById("submit");
-    let c = document.getElementById("number");
-    let box = document.getElementById("box");
+
+    const pairBox = document.getElementById("pair");
+    const submitButton = document.getElementById("submit");
+    const numberInput = document.getElementById("number");
+    const waitingMessage = document.getElementById("waiting-message");
+
 
     async function Copy() {
-      let text = document.getElementById("copy").innerText;
-      let obj = document.getElementById("copy");
-      await navigator.clipboard.writeText(obj.innerText.replace('CODE: ', ''));
-      obj.innerText = "COPIED";
-      obj.style = "color:blue;font-weight:bold";
-      obj.size = "5";
-      setTimeout(() => {
-        obj.innerText = text;
-        obj.style = "color:black;font-weight-bold";
-        obj.size = "5";
-      }, 500);
+
+      const codeElement = document.getElementById("copy");
+
+      if (!codeElement) return;
+
+      const code = codeElement.dataset.code || codeElement.innerText;
+
+      try {
+
+        await navigator.clipboard.writeText(code);
+
+        codeElement.innerHTML = "✅ COPIED";
+
+        setTimeout(() => {
+
+          codeElement.innerHTML =
+            'CODE: <span>' + code + '</span>';
+
+        }, 1200);
+
+      } catch (error) {
+
+        alert("Copy failed. Please copy the code manually.");
+
+      }
+
     }
 
-    b.addEventListener("click", async (e) => {
+
+    submitButton.addEventListener("click", async (e) => {
+
       e.preventDefault();
-      if (!c.value) {
-        a.innerHTML = '<a style="color:black;font-weight:bold">❗Enter your whatsapp number with country code.</a><br><br>';
-      } else if (c.value.replace(/[^0-9]/g, "").length < 11) {
-        a.innerHTML = '<a style="color:black;font-weight:bold">❌Invalid number format❌</a><br><br>';
-      } else {
-        const bc = c.value.replace(/[^0-9]/g, "");
-        let bb = "";
-        let bbc = "";
-        const cc = bc.split('');
-        cc.map(a => {
-          bbc += a;
-          if (bbc.length == 3) {
-            bb += " " + a;
-          } else if (bbc.length == 8) {
-            bb += " " + a;
-          } else {
-            bb += a;
-          }
-        });
-        c.type = "text";
-        c.value = "+" + bb;
-        c.style = "color:black;font-size:20px";
-        a.innerHTML = '<a style="color:black;font-weight:bold">Please wait🔎 </a><br><br>';
-        let { data } = await axios(`/code?number=${bc}`);
-        let code = data.code || "Service Unavailable";
-        a.innerHTML = '<font id="copy" onclick="Copy()" style="color:red;font-weight:bold" size="5">CODE: <span style="color:black;font-weight:bold">' + code + '</span></font><br><br><br>';
+
+
+      const rawNumber = numberInput.value.trim();
+
+      const cleanNumber =
+        rawNumber.replace(/[^0-9]/g, "");
+
+
+      pairBox.innerHTML = "";
+
+
+      if (!cleanNumber) {
+
+        pairBox.innerHTML =
+          '<div class="error">❗ Enter your WhatsApp number with country code.</div>';
+
+        return;
+
       }
+
+
+      if (cleanNumber.length < 11) {
+
+        pairBox.innerHTML =
+          '<div class="error">❌ Invalid number format.</div>';
+
+        return;
+
+      }
+
+
+      numberInput.disabled = true;
+      submitButton.disabled = true;
+
+
+      waitingMessage.style.display = "block";
+
+
+      try {
+
+        const response = await axios.get(
+          "/code?number=" + encodeURIComponent(cleanNumber)
+        );
+
+
+        const data = response.data || {};
+
+
+        waitingMessage.style.display = "none";
+
+
+        if (!data.code) {
+
+          pairBox.innerHTML =
+            '<div class="error">❌ Pairing code service unavailable.</div>';
+
+          numberInput.disabled = false;
+          submitButton.disabled = false;
+
+          return;
+        }
+
+
+        const code = String(data.code);
+
+
+        pairBox.innerHTML = `
+
+          <div class="success">
+            ✅ Pairing code generated successfully
+          </div>
+
+          <br>
+
+          <div
+            id="copy"
+            class="code-box"
+            data-code="${code}"
+            onclick="Copy()"
+          >
+            CODE:
+            <span>${code}</span>
+          </div>
+
+          <br><br>
+
+          <div style="font-size:12px;color:#555;font-weight:bold;">
+            👆 Tap the code to copy
+          </div>
+
+        `;
+
+
+      } catch (error) {
+
+        console.error("Pairing request error:", error);
+
+
+        waitingMessage.style.display = "none";
+
+
+        pairBox.innerHTML =
+          '<div class="error">❌ Unable to connect to pairing service.</div>';
+
+
+        numberInput.disabled = false;
+        submitButton.disabled = false;
+
+      }
+
     });
+
   </script>
+
 </body>
 </html>
