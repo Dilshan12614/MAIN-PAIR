@@ -5,6 +5,7 @@ const path = require('path');
 const router = express.Router();
 const pino = require('pino');
 const logger = pino({ level: 'info' });
+
 const {
     makeWASocket,
     useMultiFileAuthState,
@@ -14,26 +15,19 @@ const {
     fetchLatestBaileysVersion,
     DisconnectReason,
 } = require('@whiskeysockets/baileys');
-const axios = require('axios');
 
 function removeFile(filePath) {
     if (!fs.existsSync(filePath)) return false;
     fs.rmSync(filePath, { recursive: true, force: true });
 }
 
-function generateRandomText() {
-    const prefix = "3EB";
-    const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    let randomText = prefix;
-    for (let i = prefix.length; i < 22; i++) {
-        randomText += characters.charAt(Math.floor(Math.random() * characters.length));
-    }
-    return randomText;
-}
+async function DILA_MD_PAIR_CODE(id, num, res) {
+    const { state, saveCreds } = await useMultiFileAuthState(
+        path.join(__dirname, 'temp', id)
+    );
 
-async function GIFTED_MD_PAIR_CODE(id, num, res) {
-    const { state, saveCreds } = await useMultiFileAuthState(path.join(__dirname, 'temp', id));
-    const { version, isLatest } = await fetchLatestBaileysVersion();
+    const { version } = await fetchLatestBaileysVersion();
+
     try {
         const sock = makeWASocket({
             auth: {
@@ -45,132 +39,225 @@ async function GIFTED_MD_PAIR_CODE(id, num, res) {
             logger: logger,
             syncFullHistory: false,
             browser: Browsers.macOS('Safari'),
+            version,
         });
 
         if (!sock.authState.creds.registered) {
             await delay(1500);
+
             num = num.replace(/[^0-9]/g, '');
+
             const code = await sock.requestPairingCode(num);
+
             if (!res.headersSent) {
                 res.send({ code });
             }
         }
 
         sock.ev.on('creds.update', saveCreds);
+
         sock.ev.on('connection.update', async (update) => {
             const { connection, lastDisconnect } = update;
 
             if (connection === 'open') {
                 await delay(5000);
-                const credsFilePath = path.join(__dirname, 'temp', id, 'creds.json');
+
+                const credsFilePath = path.join(
+                    __dirname,
+                    'temp',
+                    id,
+                    'creds.json'
+                );
+
                 try {
-                    const credsData = fs.readFileSync(credsFilePath, 'utf-8');
-                    const base64Session = Buffer.from(credsData).toString('base64');
-                    const md = "ANJU-XPRO~" + base64Session;
-                    const codeMessage = await sock.sendMessage(sock.user.id, { text: md });
-                    
-                    let cap = `
-🔐 *𝙳𝙾 𝙽𝙾𝚃 𝚂𝙷𝙰𝚁𝙴 𝚃𝙷𝙸𝚂 𝙲𝙾𝙳𝙴 𝚆𝙸𝚃𝙷 𝙰𝙽𝚈𝙾𝙽𝙴!!*
+                    const credsData = fs.readFileSync(
+                        credsFilePath,
+                        'utf-8'
+                    );
 
-Use this code to create your own *𝚀𝚄𝙴𝙴𝙽 𝙰𝙽𝙹𝚄 𝚇𝙿𝚁𝙾* WhatsApp User Bot. 🤖
+                    const base64Session = Buffer
+                        .from(credsData)
+                        .toString('base64');
 
-📂 *WEBSITE:*  
-👉 https://xpro-botz-ofc.vercel.app/
+                    // ==========================================
+                    // DILA-MD SESSION ID
+                    // ==========================================
+                    const sessionId = "DILA-MD=" + base64Session;
 
-🛠️ *To add your SESSION_ID:*  
-1. Open the \`session.js\` file in the repo.  
-2. Paste your session like this:  
-\`\`\`js
-module.exports = {
-  SESSION_ID: 'PASTE_YOUR_SESSION_ID_HERE'
-}
-\`\`\`  
-3. Save the file and run the bot. ✅
+                    // Send SESSION ID first
+                    const codeMessage = await sock.sendMessage(
+                        sock.user.id,
+                        {
+                            text: sessionId
+                        }
+                    );
 
-⚠️ *NEVER SHARE YOUR SESSION ID WITH ANYONE!*
+                    // ==========================================
+                    // SESSION INFORMATION MESSAGE
+                    // ==========================================
+                    const cap = `
+╭━━━〔 🔐 DILA-MD SESSION 〕━━━╮
+┃
+┃ ✅ *PAIRING SUCCESSFUL*
+┃
+┃ 🤖 *BOT:* DILA-MD
+┃ 👤 *OWNER:* THENULA
+┃
+┃ 🔑 *SESSION ID SENT ABOVE*
+┃
+┃ ⚠️ *DO NOT SHARE YOUR SESSION ID*
+┃
+┃ Anyone with your Session ID
+┃ may be able to access your
+┃ WhatsApp bot session.
+┃
+┃
+┃ 📌 *SESSION FORMAT*
+┃
+┃ DILA-MD=xxxxxxxxxxxxxxxx
+┃
+╰━━━━━━━━━━━━━━━━━━━━━━╯
+
+⚡ *Powered by THENULA*
 `;
-                    await sock.sendMessage(sock.user.id, {
-                        text: cap,
-                        contextInfo: {
-                            externalAdReply: {
-                                title: "QUEEN ANJU XPRO ✅",
-                                thumbnailUrl: "https://telegra.ph/file/adc46970456c26cad0c15.jpg",
-                                sourceUrl: "https://whatsapp.com/channel/0029Vaj5XmgFXUubAjlU5642",
-                                mediaType: 2,
-                                renderLargerThumbnail: true,
-                                showAdAttribution: true,
+
+                    await sock.sendMessage(
+                        sock.user.id,
+                        {
+                            text: cap,
+                            contextInfo: {
+                                externalAdReply: {
+                                    title: "DILA-MD SESSION ✅",
+                                    body: "Powered by THENULA",
+                                    thumbnailUrl:
+                                        "https://telegra.ph/file/adc46970456c26cad0c15.jpg",
+                                    sourceUrl:
+                                        "https://whatsapp.com/",
+                                    mediaType: 2,
+                                    renderLargerThumbnail: true,
+                                    showAdAttribution: false,
+                                },
                             },
                         },
-                    }, { quoted: codeMessage });
+                        {
+                            quoted: codeMessage,
+                        }
+                    );
 
-                    await sock.ws.close();
-                    removeFile(path.join(__dirname, 'temp', id));
-                    logger.info(`👤 ${sock.user.id} 𝗖𝗼𝗻𝗻𝗲𝗰𝘁𝗲𝗱 ✅ 𝗥𝗲𝘀𝘁𝗮𝗿𝘁𝗶𝗻𝗴 𝗽𝗿𝗼𝗰𝗲𝘀𝘀...`);
+                    // Close connection
+                    try {
+                        await sock.ws.close();
+                    } catch (e) {}
+
+                    // Remove temporary session
+                    removeFile(
+                        path.join(__dirname, 'temp', id)
+                    );
+
+                    logger.info(
+                        `👤 ${sock.user.id} CONNECTED ✅`
+                    );
+
                     process.exit(0);
+
                 } catch (error) {
-                    logger.error(`Error in connection update: ${error.message}`);
-                    const errorMessage = await sock.sendMessage(sock.user.id, { text: error.message });
-                    let cap = `
-🔐 *𝙳𝙾 𝙽𝙾𝚃 �𝚂𝙷𝙰𝚁𝙴 𝚃𝙷𝙸𝚂 𝙲𝙾𝙳𝙴 �𝚆𝙸𝚃𝙷 𝙰𝙽𝚈𝙾𝙽𝙴!!*
 
-Use this code to create your own *𝚀𝚄𝙴𝙴𝙽 𝙰𝙽𝙹𝚄 𝚇𝙿𝚁𝙾* WhatsApp User Bot. 🤖
+                    logger.error(
+                        `Error in connection update: ${error.message}`
+                    );
 
-📂 *WEBSITE:*  
-👉 https://xpro-botz-ofc.vercel.app/
+                    try {
+                        await sock.sendMessage(
+                            sock.user.id,
+                            {
+                                text: `
+❌ *SESSION GENERATION ERROR*
 
-🛠️ *To add your SESSION_ID:*  
-1. Open the \`session.js\` file in the repo.  
-2. Paste your session like this:  
-\`\`\`js
-module.exports = {
-  SESSION_ID: 'PASTE_YOUR_SESSION_ID_HERE'
-}
-\`\`\`  
-3. Save the file and run the bot. ✅
+${error.message}
 
-⚠️ *NEVER SHARE YOUR SESSION ID WITH ANYONE!*
-`;
-                    await sock.sendMessage(sock.user.id, {
-                        text: cap,
-                        contextInfo: {
-                            externalAdReply: {
-                                title: "QUEEN ANJU XPRO",
-                                thumbnailUrl: "https://telegra.ph/file/adc46970456c26cad0c15.jpg",
-                                sourceUrl: "https://whatsapp.com/channel/0029Vaj5XmgFXUubAjlU5642",
-                                mediaType: 2,
-                                renderLargerThumbnail: true,
-                                showAdAttribution: true,
-                            },
-                        },
-                    }, { quoted: errorMessage });
+🤖 DILA-MD
+⚡ Powered by THENULA
+`
+                            }
+                        );
+                    } catch (sendError) {
+                        logger.error(
+                            `Message send error: ${sendError.message}`
+                        );
+                    }
                 }
-            } else if (connection === 'close' && lastDisconnect?.error?.output?.statusCode !== 401) {
-                logger.warn('Connection closed. Retrying...');
+
+            } else if (
+                connection === 'close' &&
+                lastDisconnect?.error?.output?.statusCode !== 401
+            ) {
+
+                logger.warn(
+                    'Connection closed. Retrying...'
+                );
+
                 await delay(10000);
-                GIFTED_MD_PAIR_CODE(id, num, res);
+
+                DILA_MD_PAIR_CODE(
+                    id,
+                    num,
+                    res
+                );
             }
         });
+
     } catch (error) {
-        logger.error(`Error in GIFTED_MD_PAIR_CODE: ${error.message}`);
-        removeFile(path.join(__dirname, 'temp', id));
+
+        logger.error(
+            `Error in DILA_MD_PAIR_CODE: ${error.message}`
+        );
+
+        removeFile(
+            path.join(__dirname, 'temp', id)
+        );
+
         if (!res.headersSent) {
-            res.send({ code: "❗ Service Unavailable" });
+            res.send({
+                code: "❗ Service Unavailable"
+            });
         }
     }
 }
 
+// ==========================================
+// PAIRING ROUTE
+// ==========================================
+
 router.get('/', async (req, res) => {
+
     const id = makeid();
     const num = req.query.number;
+
     if (!num) {
-        return res.status(400).send({ error: 'Number is required' });
+        return res.status(400).send({
+            error: 'Number is required'
+        });
     }
-    await GIFTED_MD_PAIR_CODE(id, num, res);
+
+    await DILA_MD_PAIR_CODE(
+        id,
+        num,
+        res
+    );
 });
 
+// ==========================================
+// AUTO RESTART
+// ==========================================
+
 setInterval(() => {
-    logger.info('☘️ 𝗥𝗲𝘀𝘁𝗮𝗿𝘁𝗶𝗻𝗴 𝗽𝗿𝗼𝗰𝗲𝘀𝘀...');
+
+    logger.info(
+        '☘️ Restarting process...'
+    );
+
     process.exit(0);
+
 }, 1800000);
 
 module.exports = router;
