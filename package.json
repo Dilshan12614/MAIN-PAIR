@@ -9,7 +9,7 @@
     "restart": "pm2 restart pair-main"
   },
   "dependencies": {
-    "@whiskeysockets/baileys": "npm:anju-xpro-baileys",
+    "@whiskeysockets/baileys": "6.7.24"
     "@adiwajshing/keyed-db": "^0.2.4",
     "qrcode": "^1.5.3",
     "awesome-phonenumber": "^2.64.0",
