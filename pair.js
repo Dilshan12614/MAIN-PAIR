@@ -22,17 +22,33 @@ function removeFile(filePath) {
 }
 
 async function DILA_MD_PAIR_CODE(id, num, res) {
-    const { state, saveCreds } = await useMultiFileAuthState(
-        path.join(__dirname, 'temp', id)
-    );
+
+    const sessionPath = path.join(__dirname, 'temp', id);
+
+    console.log('');
+    console.log('════════════════════════════════');
+    console.log('🔧 DILA-MD PAIR DEBUG START');
+    console.log('🆔 Pair ID:', id);
+    console.log('📱 Number:', num);
+    console.log('📁 Session Path:', sessionPath);
+    console.log('════════════════════════════════');
+
+    const { state, saveCreds } =
+        await useMultiFileAuthState(sessionPath);
+
+    console.log('✅ Auth state loaded');
 
     const { version } = await fetchLatestBaileysVersion();
 
     try {
+
         const sock = makeWASocket({
             auth: {
                 creds: state.creds,
-                keys: makeCacheableSignalKeyStore(state.keys, logger),
+                keys: makeCacheableSignalKeyStore(
+                    state.keys,
+                    logger
+                ),
             },
             printQRInTerminal: false,
             generateHighQualityLinkPreview: true,
@@ -42,60 +58,238 @@ async function DILA_MD_PAIR_CODE(id, num, res) {
             version,
         });
 
+        console.log('✅ WhatsApp socket created');
+
         if (!sock.authState.creds.registered) {
+
+            console.log('⏳ Requesting pairing code...');
+
             await delay(1500);
 
             num = num.replace(/[^0-9]/g, '');
 
+            console.log('📱 Pairing number:', num);
+
             const code = await sock.requestPairingCode(num);
 
+            console.log('🔑 PAIRING CODE:', code);
+
             if (!res.headersSent) {
-                res.send({ code });
+                res.send({
+                    code: code
+                });
             }
+
+            console.log('✅ Pairing code sent to website');
+        } else {
+
+            console.log('⚠️ Credentials already registered');
         }
 
-        sock.ev.on('creds.update', saveCreds);
+        sock.ev.on('creds.update', async (creds) => {
 
-        sock.ev.on('connection.update', async (update) => {
-            const { connection, lastDisconnect } = update;
+            console.log('💾 CREDS UPDATE RECEIVED');
 
-            if (connection === 'open') {
-                await delay(5000);
+            try {
+                await saveCreds();
 
-                const credsFilePath = path.join(
-                    __dirname,
-                    'temp',
-                    id,
-                    'creds.json'
+                console.log('✅ Credentials saved');
+
+                console.log(
+                    '📁 Session directory:',
+                    sessionPath
                 );
 
-                try {
-                    const credsData = fs.readFileSync(
-                        credsFilePath,
-                        'utf-8'
+                if (fs.existsSync(sessionPath)) {
+
+                    const files = fs.readdirSync(sessionPath);
+
+                    console.log(
+                        '📂 Session files:',
+                        files
                     );
 
-                    const base64Session = Buffer
-                        .from(credsData)
-                        .toString('base64');
+                } else {
 
-                    // ==========================================
-                    // DILA-MD SESSION ID
-                    // ==========================================
-                    const sessionId = "DILA-MD=" + base64Session;
+                    console.log(
+                        '❌ Session directory does NOT exist'
+                    );
+                }
 
-                    // Send SESSION ID first
-                    const codeMessage = await sock.sendMessage(
-                        sock.user.id,
-                        {
-                            text: sessionId
+            } catch (err) {
+
+                console.log(
+                    '❌ SAVE CREDS ERROR:',
+                    err.message
+                );
+            }
+        });
+
+        sock.ev.on(
+            'connection.update',
+            async (update) => {
+
+                const {
+                    connection,
+                    lastDisconnect
+                } = update;
+
+                console.log('');
+                console.log(
+                    '🔄 CONNECTION UPDATE:',
+                    connection
+                );
+
+                if (connection === 'open') {
+
+                    console.log('');
+                    console.log(
+                        '════════════════════════════════'
+                    );
+                    console.log(
+                        '🎉 WHATSAPP CONNECTED SUCCESSFULLY'
+                    );
+                    console.log(
+                        '════════════════════════════════'
+                    );
+
+                    await delay(5000);
+
+                    const credsFilePath =
+                        path.join(
+                            sessionPath,
+                            'creds.json'
+                        );
+
+                    console.log(
+                        '📄 Checking creds.json...'
+                    );
+
+                    console.log(
+                        '📍 Path:',
+                        credsFilePath
+                    );
+
+                    const exists =
+                        fs.existsSync(credsFilePath);
+
+                    console.log(
+                        '📌 CREDS.JSON EXISTS:',
+                        exists
+                    );
+
+                    if (!exists) {
+
+                        console.log(
+                            '❌ creds.json NOT FOUND!'
+                        );
+
+                        console.log(
+                            '📂 Current session folder:'
+                        );
+
+                        try {
+
+                            const files =
+                                fs.readdirSync(
+                                    sessionPath
+                                );
+
+                            console.log(files);
+
+                        } catch (err) {
+
+                            console.log(
+                                '❌ Cannot read session folder:',
+                                err.message
+                            );
                         }
-                    );
 
-                    // ==========================================
-                    // SESSION INFORMATION MESSAGE
-                    // ==========================================
-                    const cap = `
+                        return;
+                    }
+
+                    try {
+
+                        console.log(
+                            '📖 Reading creds.json...'
+                        );
+
+                        const credsData =
+                            fs.readFileSync(
+                                credsFilePath,
+                                'utf-8'
+                            );
+
+                        console.log(
+                            '✅ creds.json read successfully'
+                        );
+
+                        console.log(
+                            '📦 Creds size:',
+                            credsData.length,
+                            'characters'
+                        );
+
+                        const base64Session =
+                            Buffer
+                                .from(credsData)
+                                .toString('base64');
+
+                        console.log(
+                            '✅ Base64 session generated'
+                        );
+
+                        console.log(
+                            '📦 Base64 size:',
+                            base64Session.length,
+                            'characters'
+                        );
+
+                        const sessionId =
+                            'DILA-MD=' + base64Session;
+
+                        console.log('');
+                        console.log(
+                            '════════════════════════════════'
+                        );
+                        console.log(
+                            '🔐 SESSION ID GENERATED'
+                        );
+                        console.log(
+                            '════════════════════════════════'
+                        );
+
+                        console.log(
+                            'PREFIX: DILA-MD='
+                        );
+
+                        console.log(
+                            'SESSION LENGTH:',
+                            sessionId.length
+                        );
+
+                        console.log(
+                            '════════════════════════════════'
+                        );
+
+                        // Send Session ID
+                        console.log(
+                            '📤 Sending Session ID to WhatsApp...'
+                        );
+
+                        const codeMessage =
+                            await sock.sendMessage(
+                                sock.user.id,
+                                {
+                                    text: sessionId
+                                }
+                            );
+
+                        console.log(
+                            '✅ SESSION ID SENT SUCCESSFULLY'
+                        );
+
+                        const cap = `
 ╭━━━〔 🔐 DILA-MD SESSION 〕━━━╮
 ┃
 ┃ ✅ *PAIRING SUCCESSFUL*
@@ -107,133 +301,154 @@ async function DILA_MD_PAIR_CODE(id, num, res) {
 ┃
 ┃ ⚠️ *DO NOT SHARE YOUR SESSION ID*
 ┃
-┃ Anyone with your Session ID
-┃ may be able to access your
-┃ WhatsApp bot session.
-┃
-┃
-┃ 📌 *SESSION FORMAT*
-┃
-┃ DILA-MD=xxxxxxxxxxxxxxxx
-┃
 ╰━━━━━━━━━━━━━━━━━━━━━━╯
 
 ⚡ *Powered by THENULA*
 `;
 
-                    await sock.sendMessage(
-                        sock.user.id,
-                        {
-                            text: cap,
-                            contextInfo: {
-                                externalAdReply: {
-                                    title: "DILA-MD SESSION ✅",
-                                    body: "Powered by THENULA",
-                                    thumbnailUrl:
-                                        "https://telegra.ph/file/adc46970456c26cad0c15.jpg",
-                                    sourceUrl:
-                                        "https://whatsapp.com/",
-                                    mediaType: 2,
-                                    renderLargerThumbnail: true,
-                                    showAdAttribution: false,
-                                },
-                            },
-                        },
-                        {
-                            quoted: codeMessage,
-                        }
-                    );
-
-                    // Close connection
-                    try {
-                        await sock.ws.close();
-                    } catch (e) {}
-
-                    // Remove temporary session
-                    removeFile(
-                        path.join(__dirname, 'temp', id)
-                    );
-
-                    logger.info(
-                        `👤 ${sock.user.id} CONNECTED ✅`
-                    );
-
-                    process.exit(0);
-
-                } catch (error) {
-
-                    logger.error(
-                        `Error in connection update: ${error.message}`
-                    );
-
-                    try {
                         await sock.sendMessage(
                             sock.user.id,
                             {
-                                text: `
-❌ *SESSION GENERATION ERROR*
-
-${error.message}
-
-🤖 DILA-MD
-⚡ Powered by THENULA
-`
+                                text: cap
+                            },
+                            {
+                                quoted: codeMessage
                             }
                         );
-                    } catch (sendError) {
+
+                        console.log(
+                            '✅ Confirmation message sent'
+                        );
+
+                        try {
+                            await sock.ws.close();
+                        } catch (e) {}
+
+                        removeFile(sessionPath);
+
+                        console.log(
+                            '🗑️ Temporary session removed'
+                        );
+
+                        logger.info(
+                            `👤 ${sock.user.id} CONNECTED ✅`
+                        );
+
+                        console.log(
+                            '🏁 DILA-MD PAIR COMPLETE'
+                        );
+
+                        process.exit(0);
+
+                    } catch (error) {
+
+                        console.log('');
+                        console.log(
+                            '❌ SESSION GENERATION ERROR'
+                        );
+
+                        console.log(
+                            error
+                        );
+
                         logger.error(
-                            `Message send error: ${sendError.message}`
+                            error.message
+                        );
+                    }
+
+                } else if (
+                    connection === 'close'
+                ) {
+
+                    const statusCode =
+                        lastDisconnect
+                            ?.error
+                            ?.output
+                            ?.statusCode;
+
+                    console.log('');
+                    console.log(
+                        '❌ CONNECTION CLOSED'
+                    );
+
+                    console.log(
+                        '📌 Status Code:',
+                        statusCode
+                    );
+
+                    if (
+                        statusCode !== 401
+                    ) {
+
+                        console.log(
+                            '⏳ Retrying in 10 seconds...'
+                        );
+
+                        await delay(10000);
+
+                        DILA_MD_PAIR_CODE(
+                            id,
+                            num,
+                            res
+                        );
+                    } else {
+
+                        console.log(
+                            '🚫 Logged out / Unauthorized'
                         );
                     }
                 }
-
-            } else if (
-                connection === 'close' &&
-                lastDisconnect?.error?.output?.statusCode !== 401
-            ) {
-
-                logger.warn(
-                    'Connection closed. Retrying...'
-                );
-
-                await delay(10000);
-
-                DILA_MD_PAIR_CODE(
-                    id,
-                    num,
-                    res
-                );
             }
-        });
+        );
 
     } catch (error) {
+
+        console.log('');
+        console.log(
+            '❌ PAIR FUNCTION ERROR'
+        );
+
+        console.log(
+            error
+        );
 
         logger.error(
             `Error in DILA_MD_PAIR_CODE: ${error.message}`
         );
 
-        removeFile(
-            path.join(__dirname, 'temp', id)
-        );
+        removeFile(sessionPath);
 
         if (!res.headersSent) {
+
             res.send({
-                code: "❗ Service Unavailable"
+                code: '❗ Service Unavailable'
             });
         }
     }
 }
-
-// ==========================================
-// PAIRING ROUTE
-// ==========================================
 
 router.get('/', async (req, res) => {
 
     const id = makeid();
     const num = req.query.number;
 
+    console.log('');
+    console.log(
+        '🌐 NEW PAIR REQUEST'
+    );
+
+    console.log(
+        '🆔 ID:',
+        id
+    );
+
+    console.log(
+        '📱 Number:',
+        num
+    );
+
     if (!num) {
+
         return res.status(400).send({
             error: 'Number is required'
         });
@@ -245,10 +460,6 @@ router.get('/', async (req, res) => {
         res
     );
 });
-
-// ==========================================
-// AUTO RESTART
-// ==========================================
 
 setInterval(() => {
 
