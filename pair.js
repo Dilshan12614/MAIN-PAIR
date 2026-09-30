@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const router = express.Router();
 const pino = require('pino');
+
 const logger = pino({ level: 'info' });
 
 const {
@@ -14,116 +15,443 @@ const {
     makeCacheableSignalKeyStore,
     fetchLatestBaileysVersion,
     DisconnectReason,
+    jidNormalizedUser
 } = require('@whiskeysockets/baileys');
 
+
 function removeFile(filePath) {
-    if (!fs.existsSync(filePath)) return false;
-    fs.rmSync(filePath, { recursive: true, force: true });
+    try {
+        if (fs.existsSync(filePath)) {
+            fs.rmSync(filePath, {
+                recursive: true,
+                force: true
+            });
+        }
+    } catch (error) {
+        console.log('❌ Remove temp error:', error.message);
+    }
 }
 
-async function DILA_MD_PAIR_CODE(id, num, res) {
 
-    const sessionPath = path.join(__dirname, 'temp', id);
+/*
+|--------------------------------------------------------------------------
+| SEND SESSION
+|--------------------------------------------------------------------------
+*/
+
+async function sendSession(sock, sessionPath) {
+
+    const credsFilePath = path.join(
+        sessionPath,
+        'creds.json'
+    );
+
+    console.log('🔎 Waiting for credentials...');
+
+    /*
+    | Wait up to 30 seconds for creds.json
+    */
+
+    for (let i = 0; i < 30; i++) {
+
+        if (fs.existsSync(credsFilePath)) {
+            break;
+        }
+
+        await delay(1000);
+    }
+
+
+    if (!fs.existsSync(credsFilePath)) {
+
+        throw new Error(
+            'creds.json was not created'
+        );
+    }
+
+
+    console.log(
+        '✅ creds.json found'
+    );
+
+
+    /*
+    | Read credentials
+    */
+
+    const credsData = fs.readFileSync(
+        credsFilePath,
+        'utf8'
+    );
+
+
+    if (!credsData || credsData.length < 50) {
+
+        throw new Error(
+            'creds.json is empty or invalid'
+        );
+    }
+
+
+    console.log(
+        '📦 Credentials size:',
+        credsData.length
+    );
+
+
+    /*
+    | Generate Session ID
+    */
+
+    const base64Session =
+        Buffer
+            .from(credsData)
+            .toString('base64');
+
+
+    const sessionId =
+        'DILA-MD=' + base64Session;
+
 
     console.log('');
-    console.log('════════════════════════════════');
-    console.log('🔧 DILA-MD PAIR DEBUG START');
-    console.log('🆔 Pair ID:', id);
-    console.log('📱 Number:', num);
-    console.log('📁 Session Path:', sessionPath);
-    console.log('════════════════════════════════');
+    console.log(
+        '════════════════════════════════'
+    );
+    console.log(
+        '🔐 SESSION ID GENERATED'
+    );
+    console.log(
+        '📦 Length:',
+        sessionId.length
+    );
+    console.log(
+        '════════════════════════════════'
+    );
 
-    const { state, saveCreds } =
-        await useMultiFileAuthState(sessionPath);
 
-    console.log('✅ Auth state loaded');
+    /*
+    | Get own WhatsApp JID
+    */
 
-    const { version } = await fetchLatestBaileysVersion();
+    const userJid = sock.user?.id
+        ? jidNormalizedUser(sock.user.id)
+        : null;
+
+
+    if (!userJid) {
+
+        throw new Error(
+            'WhatsApp user JID not available'
+        );
+    }
+
+
+    console.log(
+        '📱 Sending Session to:',
+        userJid
+    );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | MESSAGE 1 - SESSION ID
+    |--------------------------------------------------------------------------
+    */
+
+    const sessionMessage =
+        await sock.sendMessage(
+            userJid,
+            {
+                text: sessionId
+            }
+        );
+
+
+    console.log(
+        '✅ SESSION ID SENT'
+    );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | MESSAGE 2 - SUCCESS MESSAGE
+    |--------------------------------------------------------------------------
+    */
+
+    await delay(1500);
+
+
+    const successMessage = `
+╭━━━━━━━━━━━━━━━━━━━╮
+┃   🔐 *DILA-MD SESSION*
+╰━━━━━━━━━━━━━━━━━━━╯
+
+╭───────────────●●►
+│ ✅ *PAIRING SUCCESSFUL*
+│
+│ 🤖 *BOT:* DILA-MD
+│ 👤 *OWNER:* THENULA
+│
+│ 🔑 *SESSION ID*
+│ 📩 Session ID එක ඉහළින්
+│    message එකේ තියෙනවා.
+╰───────────────●●►
+
+⚠️ *IMPORTANT*
+• Session ID එක කාටවත් share කරන්න එපා.
+• මේ Session ID එක bot එකට login
+  කරන්න භාවිතා කරන්න.
+
+╭───────────────●●►
+│ 🚀 *CYBER THENUVA X MD*
+│ ⚡ *POWERED BY THENULA*
+╰───────────────●●►
+`;
+
+
+    await sock.sendMessage(
+        userJid,
+        {
+            text: successMessage
+        },
+        {
+            quoted: sessionMessage
+        }
+    );
+
+
+    console.log(
+        '✅ SUCCESS MESSAGE SENT'
+    );
+
+
+    /*
+    | Give WhatsApp time to finish sending
+    */
+
+    await delay(3000);
+
+
+    console.log(
+        '🎉 SESSION DELIVERY COMPLETE'
+    );
+
+
+    return true;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| PAIR CODE FUNCTION
+|--------------------------------------------------------------------------
+*/
+
+async function DILA_MD_PAIR_CODE(
+    id,
+    num,
+    res
+) {
+
+    const sessionPath = path.join(
+        __dirname,
+        'temp',
+        id
+    );
+
+
+    console.log('');
+    console.log(
+        '════════════════════════════════'
+    );
+    console.log(
+        '🔧 DILA-MD PAIR START'
+    );
+    console.log(
+        '🆔 ID:',
+        id
+    );
+    console.log(
+        '📱 Number:',
+        num
+    );
+    console.log(
+        '📁 Session:',
+        sessionPath
+    );
+    console.log(
+        '════════════════════════════════'
+    );
+
 
     try {
 
+        /*
+        | Create auth state
+        */
+
+        const {
+            state,
+            saveCreds
+        } = await useMultiFileAuthState(
+            sessionPath
+        );
+
+
+        console.log(
+            '✅ Auth state loaded'
+        );
+
+
+        /*
+        | Get Baileys version
+        */
+
+        const {
+            version
+        } = await fetchLatestBaileysVersion();
+
+
+        /*
+        | Create socket
+        */
+
         const sock = makeWASocket({
+
             auth: {
                 creds: state.creds,
-                keys: makeCacheableSignalKeyStore(
-                    state.keys,
-                    logger
-                ),
+
+                keys:
+                    makeCacheableSignalKeyStore(
+                        state.keys,
+                        logger
+                    )
             },
+
             printQRInTerminal: false,
+
             generateHighQualityLinkPreview: true,
-            logger: logger,
+
+            logger,
+
             syncFullHistory: false,
-            browser: Browsers.macOS('Safari'),
-            version,
+
+            browser:
+                Browsers.macOS('Safari'),
+
+            version
+
         });
 
-        console.log('✅ WhatsApp socket created');
 
-        if (!sock.authState.creds.registered) {
+        console.log(
+            '✅ WhatsApp socket created'
+        );
 
-            console.log('⏳ Requesting pairing code...');
+
+        /*
+        |--------------------------------------------------------------------------
+        | SAVE CREDENTIALS
+        |--------------------------------------------------------------------------
+        */
+
+        sock.ev.on(
+            'creds.update',
+            async () => {
+
+                try {
+
+                    await saveCreds();
+
+                    console.log(
+                        '💾 Credentials saved'
+                    );
+
+                } catch (error) {
+
+                    console.log(
+                        '❌ Save credentials error:',
+                        error.message
+                    );
+                }
+            }
+        );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | REQUEST PAIRING CODE
+        |--------------------------------------------------------------------------
+        */
+
+        if (!state.creds.registered) {
 
             await delay(1500);
 
-            num = num.replace(/[^0-9]/g, '');
 
-            console.log('📱 Pairing number:', num);
+            const cleanNumber =
+                String(num)
+                    .replace(
+                        /[^0-9]/g,
+                        ''
+                    );
 
-            const code = await sock.requestPairingCode(num);
 
-            console.log('🔑 PAIRING CODE:', code);
+            if (!cleanNumber) {
+
+                throw new Error(
+                    'Invalid phone number'
+                );
+            }
+
+
+            console.log(
+                '📱 Pairing number:',
+                cleanNumber
+            );
+
+
+            const code =
+                await sock.requestPairingCode(
+                    cleanNumber
+                );
+
+
+            console.log(
+                '🔑 PAIRING CODE:',
+                code
+            );
+
+
+            /*
+            | Send pairing code to website
+            */
 
             if (!res.headersSent) {
-                res.send({
+
+                res.status(200).json({
                     code: code
                 });
             }
 
-            console.log('✅ Pairing code sent to website');
+
+            console.log(
+                '✅ Pairing code sent to website'
+            );
+
         } else {
 
-            console.log('⚠️ Credentials already registered');
+            console.log(
+                '⚠️ Credentials already registered'
+            );
         }
 
-        sock.ev.on('creds.update', async (creds) => {
 
-            console.log('💾 CREDS UPDATE RECEIVED');
-
-            try {
-                await saveCreds();
-
-                console.log('✅ Credentials saved');
-
-                console.log(
-                    '📁 Session directory:',
-                    sessionPath
-                );
-
-                if (fs.existsSync(sessionPath)) {
-
-                    const files = fs.readdirSync(sessionPath);
-
-                    console.log(
-                        '📂 Session files:',
-                        files
-                    );
-
-                } else {
-
-                    console.log(
-                        '❌ Session directory does NOT exist'
-                    );
-                }
-
-            } catch (err) {
-
-                console.log(
-                    '❌ SAVE CREDS ERROR:',
-                    err.message
-                );
-            }
-        });
+        /*
+        |--------------------------------------------------------------------------
+        | CONNECTION UPDATE
+        |--------------------------------------------------------------------------
+        */
 
         sock.ev.on(
             'connection.update',
@@ -134,231 +462,116 @@ async function DILA_MD_PAIR_CODE(id, num, res) {
                     lastDisconnect
                 } = update;
 
-                console.log('');
+
                 console.log(
-                    '🔄 CONNECTION UPDATE:',
+                    '🔄 CONNECTION:',
                     connection
                 );
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | CONNECTED
+                |--------------------------------------------------------------------------
+                */
 
                 if (connection === 'open') {
 
                     console.log('');
                     console.log(
-                        '════════════════════════════════'
-                    );
-                    console.log(
-                        '🎉 WHATSAPP CONNECTED SUCCESSFULLY'
-                    );
-                    console.log(
-                        '════════════════════════════════'
+                        '🎉 WHATSAPP CONNECTED!'
                     );
 
-                    await delay(5000);
-
-                    const credsFilePath =
-                        path.join(
-                            sessionPath,
-                            'creds.json'
-                        );
-
-                    console.log(
-                        '📄 Checking creds.json...'
-                    );
-
-                    console.log(
-                        '📍 Path:',
-                        credsFilePath
-                    );
-
-                    const exists =
-                        fs.existsSync(credsFilePath);
-
-                    console.log(
-                        '📌 CREDS.JSON EXISTS:',
-                        exists
-                    );
-
-                    if (!exists) {
-
-                        console.log(
-                            '❌ creds.json NOT FOUND!'
-                        );
-
-                        console.log(
-                            '📂 Current session folder:'
-                        );
-
-                        try {
-
-                            const files =
-                                fs.readdirSync(
-                                    sessionPath
-                                );
-
-                            console.log(files);
-
-                        } catch (err) {
-
-                            console.log(
-                                '❌ Cannot read session folder:',
-                                err.message
-                            );
-                        }
-
-                        return;
-                    }
 
                     try {
 
-                        console.log(
-                            '📖 Reading creds.json...'
+                        /*
+                        | Wait for credential save
+                        */
+
+                        await delay(3000);
+
+
+                        /*
+                        | Send Session ID
+                        */
+
+                        await sendSession(
+                            sock,
+                            sessionPath
                         );
 
-                        const credsData =
-                            fs.readFileSync(
-                                credsFilePath,
-                                'utf-8'
-                            );
-
-                        console.log(
-                            '✅ creds.json read successfully'
-                        );
-
-                        console.log(
-                            '📦 Creds size:',
-                            credsData.length,
-                            'characters'
-                        );
-
-                        const base64Session =
-                            Buffer
-                                .from(credsData)
-                                .toString('base64');
 
                         console.log(
-                            '✅ Base64 session generated'
+                            '✅ SESSION DELIVERY SUCCESS'
                         );
 
-                        console.log(
-                            '📦 Base64 size:',
-                            base64Session.length,
-                            'characters'
-                        );
 
-                        const sessionId =
-                            'DILA-MD=' + base64Session;
+                        /*
+                        | Close only this socket
+                        */
 
-                        console.log('');
-                        console.log(
-                            '════════════════════════════════'
-                        );
-                        console.log(
-                            '🔐 SESSION ID GENERATED'
-                        );
-                        console.log(
-                            '════════════════════════════════'
-                        );
+                        await delay(3000);
 
-                        console.log(
-                            'PREFIX: DILA-MD='
-                        );
-
-                        console.log(
-                            'SESSION LENGTH:',
-                            sessionId.length
-                        );
-
-                        console.log(
-                            '════════════════════════════════'
-                        );
-
-                        // Send Session ID
-                        console.log(
-                            '📤 Sending Session ID to WhatsApp...'
-                        );
-
-                        const codeMessage =
-                            await sock.sendMessage(
-                                sock.user.id,
-                                {
-                                    text: sessionId
-                                }
-                            );
-
-                        console.log(
-                            '✅ SESSION ID SENT SUCCESSFULLY'
-                        );
-
-                        const cap = `
-╭━━━〔 🔐 DILA-MD SESSION 〕━━━╮
-┃
-┃ ✅ *PAIRING SUCCESSFUL*
-┃
-┃ 🤖 *BOT:* DILA-MD
-┃ 👤 *OWNER:* THENULA
-┃
-┃ 🔑 *SESSION ID SENT ABOVE*
-┃
-┃ ⚠️ *DO NOT SHARE YOUR SESSION ID*
-┃
-╰━━━━━━━━━━━━━━━━━━━━━━╯
-
-⚡ *Powered by THENULA*
-`;
-
-                        await sock.sendMessage(
-                            sock.user.id,
-                            {
-                                text: cap
-                            },
-                            {
-                                quoted: codeMessage
-                            }
-                        );
-
-                        console.log(
-                            '✅ Confirmation message sent'
-                        );
 
                         try {
-                            await sock.ws.close();
-                        } catch (e) {}
 
-                        removeFile(sessionPath);
+                            sock.ws.close();
+
+                        } catch (e) {
+
+                            console.log(
+                                '⚠️ Socket close:',
+                                e.message
+                            );
+                        }
+
+
+                        /*
+                        | Remove temporary auth
+                        */
+
+                        await delay(1000);
+
+
+                        removeFile(
+                            sessionPath
+                        );
+
 
                         console.log(
                             '🗑️ Temporary session removed'
                         );
 
-                        logger.info(
-                            `👤 ${sock.user.id} CONNECTED ✅`
-                        );
 
                         console.log(
-                            '🏁 DILA-MD PAIR COMPLETE'
+                            '🏁 PAIRING COMPLETE'
                         );
 
-                        process.exit(0);
 
                     } catch (error) {
 
                         console.log('');
                         console.log(
-                            '❌ SESSION GENERATION ERROR'
+                            '❌ SESSION SEND ERROR'
                         );
-
                         console.log(
                             error
                         );
 
-                        logger.error(
-                            error.message
-                        );
                     }
 
-                } else if (
-                    connection === 'close'
-                ) {
+                    return;
+                }
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | CONNECTION CLOSED
+                |--------------------------------------------------------------------------
+                */
+
+                if (connection === 'close') {
 
                     const statusCode =
                         lastDisconnect
@@ -366,40 +579,46 @@ async function DILA_MD_PAIR_CODE(id, num, res) {
                             ?.output
                             ?.statusCode;
 
-                    console.log('');
-                    console.log(
-                        '❌ CONNECTION CLOSED'
-                    );
 
                     console.log(
-                        '📌 Status Code:',
+                        '❌ CONNECTION CLOSED:',
                         statusCode
                     );
 
+
+                    /*
+                    | 401 = logged out / invalid
+                    */
+
                     if (
-                        statusCode !== 401
+                        statusCode ===
+                        DisconnectReason.loggedOut
                     ) {
 
                         console.log(
-                            '⏳ Retrying in 10 seconds...'
+                            '🚫 WhatsApp logged out'
                         );
 
-                        await delay(10000);
-
-                        DILA_MD_PAIR_CODE(
-                            id,
-                            num,
-                            res
+                        removeFile(
+                            sessionPath
                         );
-                    } else {
 
-                        console.log(
-                            '🚫 Logged out / Unauthorized'
-                        );
+                        return;
                     }
+
+
+                    /*
+                    | Other disconnects
+                    */
+
+                    console.log(
+                        '🔄 Connection closed before completion'
+                    );
                 }
+
             }
         );
+
 
     } catch (error) {
 
@@ -412,63 +631,79 @@ async function DILA_MD_PAIR_CODE(id, num, res) {
             error
         );
 
-        logger.error(
-            `Error in DILA_MD_PAIR_CODE: ${error.message}`
+
+        removeFile(
+            sessionPath
         );
 
-        removeFile(sessionPath);
 
         if (!res.headersSent) {
 
-            res.send({
-                code: '❗ Service Unavailable'
+            res.status(500).json({
+                error:
+                    'Pairing service unavailable',
+                message:
+                    error.message
             });
         }
     }
 }
 
-router.get('/', async (req, res) => {
 
-    const id = makeid();
-    const num = req.query.number;
+/*
+|--------------------------------------------------------------------------
+| PAIRING ROUTE
+|--------------------------------------------------------------------------
+*/
 
-    console.log('');
-    console.log(
-        '🌐 NEW PAIR REQUEST'
-    );
+router.get(
+    '/',
+    async (req, res) => {
 
-    console.log(
-        '🆔 ID:',
-        id
-    );
+        const id = makeid();
 
-    console.log(
-        '📱 Number:',
-        num
-    );
+        const num =
+            req.query.number;
 
-    if (!num) {
 
-        return res.status(400).send({
-            error: 'Number is required'
-        });
+        console.log('');
+        console.log(
+            '🌐 NEW PAIR REQUEST'
+        );
+
+        console.log(
+            '🆔 ID:',
+            id
+        );
+
+        console.log(
+            '📱 Number:',
+            num
+        );
+
+
+        if (!num) {
+
+            return res.status(400).json({
+                error:
+                    'Number is required'
+            });
+        }
+
+
+        await DILA_MD_PAIR_CODE(
+            id,
+            num,
+            res
+        );
     }
+);
 
-    await DILA_MD_PAIR_CODE(
-        id,
-        num,
-        res
-    );
-});
 
-setInterval(() => {
-
-    logger.info(
-        '☘️ Restarting process...'
-    );
-
-    process.exit(0);
-
-}, 1800000);
+/*
+|--------------------------------------------------------------------------
+| EXPORT
+|--------------------------------------------------------------------------
+*/
 
 module.exports = router;
